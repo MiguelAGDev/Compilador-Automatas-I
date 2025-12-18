@@ -218,11 +218,28 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         std::string X_str = miPila.top();
         std::string a_str = asTokens[ip];
 
+        // int idX = -1;
+        // if(X_str == "S") idX = NT_S;
+        // else if(X_str == "D") idX = NT_D;
+        // else if(X_str == "T") idX = NT_T;
+        // else if(X_str == "C") idX = NT_C;
+        // else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
+
         int idX = -1;
         if(X_str == "S") idX = NT_S;
         else if(X_str == "D") idX = NT_D;
         else if(X_str == "T") idX = NT_T;
         else if(X_str == "C") idX = NT_C;
+        else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
+
+        // Reemplaza esos "if/else if" por un mapa completo o agrega los que faltan:
+        if(X_str == "S") idX = NT_S;
+        else if(X_str == "B") idX = NT_B;
+        else if(X_str == "C") idX = NT_C;
+        else if(X_str == "D") idX = NT_D;
+        else if(X_str == "W") idX = NT_W;   // Para que jale el while
+        else if(X_str == "FR") idX = NT_FR; // Para que jale el for
+        else if(X_str == "O") idX = NT_O;
         else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
 
         int idA = tokenToEnum.count(a_str) ? tokenToEnum[a_str] : T_ERROR;

@@ -59,7 +59,9 @@ public:
      * una cadena vacia
      */
     string top() {
-        if (elementos.size() >= 0) return string(elemetos.to);
+        if (!elementos.empty()) {
+            return elementos.back();
+        }
         return "";
     }
 

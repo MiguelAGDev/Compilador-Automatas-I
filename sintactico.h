@@ -17,7 +17,6 @@ enum Terminales {
     T_WHILE, T_FOR, T_INT, T_FLOAT, T_CHAR, T_BOOL, T_STRING,
     T_NUM, T_CTE_LIT, T_IGUAL, T_OR, T_AND, T_MENOR, /*T_MAYOR_IGUAL,/*
     /*T_MENOR_IGUAL*/ T_MAYOR, T_IGUAL_IGUAL, T_DIFERENTE,
-    T_REAL,    // <-- Agregado para corregir el error
     T_PESOS,
     T_EPSILON, // <-- Para reglas vacías
     T_ERROR

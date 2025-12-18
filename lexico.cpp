@@ -103,6 +103,7 @@ void Lexico::scanner(const char cadena[255]) {
                 initialize(); startToken = i;
             }
             break;
+
         case 9: // DECIMALES
             if (isDigit(caracter)) {
                 i++;
