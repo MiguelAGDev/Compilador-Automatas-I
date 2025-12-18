@@ -2,44 +2,67 @@
 #include "lexico.h"
 #include "sintactico.h"
 #include <iostream>
+
 using namespace std;
 
 int main() {
-    // 1. Instanciamos con los nombres exactos de tus clases
     Lexico lex;
     Sintactico sint;
 
-    string entrada;
+    string entradaTotal;
+    string linea;
 
     cout << "=== DEBUG: ANALIZADOR COMPLETO ===" << endl;
-    cout << "Introduce el codigo a analizar (ejemplo: int id;):" << endl;
 
-    // Leemos la línea completa
-    getline(cin, entrada);
+    while (true) {
+        cout << "\n___________________________________________________" << endl;
+        cout << "Introduce codigo en multiples lineas." << endl;
+        cout << "Escribe '$' y Enter para ANALIZAR." << endl;
+        cout << "Escribe '@' y Enter para SALIR." << endl;
+        cout << "___________________________________________________" << endl;
 
-    if (!entrada.empty()) {
-        // 2. EJECUCIÓN DEL LÉXICO
-        // En tu lexico.cpp, el motor es 'scanner(const char cadena[255])'
-        lex.scanner(entrada.c_str());
+        entradaTotal = ""; // Limpiamos la entrada anterior
 
-        cout << "\n[1] Resultado del Analisis Lexico:" << endl;
-        int numTokens = lex.getK(); // Usamos tu getter
+        // --- BUCLE DE LECTURA MULTILÍNEA ---
+        while (true) {
+            getline(cin, linea);
 
-        for(int i = 0; i < numTokens; i++) {
-            cout << "Token [" << i << "]: " << lex.asTokens[i] << endl;
+            // 1. Checar si quiere salir del programa
+            if (linea == "@") {
+                cout << "Finalizando programa..." << endl;
+                return 0;
+            }
+
+            // 2. Checar si quiere terminar el bloque y analizar
+            if (linea == "$") {
+                break; // Rompe el bucle de lectura y va a analizar
+            }
+
+            // 3. Si no es ni @ ni $, guardamos la línea
+            // Agregamos un espacio para que no se peguen las palabras al dar enter
+            entradaTotal += linea + " ";
         }
 
-        // 3. EJECUCIÓN DEL SINTÁCTICO
-        // Tu método 'analizar' recibe el arreglo de tokens:
-        // void analizar(char tokens[][100], int n);
-        cout << "\n[2] Resultado del Analisis Sintactico:" << endl;
-        sint.ejecutar(lex.asTokens, numTokens);
-    } else {
-        cout << "Entrada vacia." << endl;
-    }
+        if (!entradaTotal.empty()) {
+            cout << "\n>>> Procesando bloque de codigo..." << endl;
 
-    cout << "\nPresiona Enter para salir..." << endl;
-    cin.get();
+            // --- EJECUCIÓN DEL LÉXICO ---
+            lex.scanner(entradaTotal.c_str());
+
+            cout << "\n[1] Resultado del Analisis Lexico:" << endl;
+            int numTokens = lex.getK();
+
+            for(int i = 0; i < numTokens; i++) {
+                cout << "Token [" << i << "]: " << lex.asTokens[i] << endl;
+            }
+
+            // --- EJECUCIÓN DEL SINTÁCTICO ---
+            cout << "\n[2] Resultado del Analisis Sintactico:" << endl;
+            sint.ejecutar(lex.asTokens, numTokens);
+        } else {
+            cout << "Bloque vacio." << endl;
+        }
+    }
 
     return 0;
 }

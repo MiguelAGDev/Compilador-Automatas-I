@@ -144,6 +144,7 @@ void Sintactico::configurarGramatica() {
     gramatica[51] = Produccion(51, NT_FA_PRIMA, {NT_V, T_IGUAL});
     // FA' -> epsilon
     gramatica[55] = Produccion(55, NT_FA_PRIMA, {T_EPSILON});
+
     // O -> R O' | O' -> LOP R O' | e
     gramatica[38] = Produccion(38, NT_O, {NT_O_PRIMA, NT_R});
     gramatica[39] = Produccion(39, NT_O_PRIMA, {NT_O_PRIMA, NT_R, NT_LOP});
@@ -207,9 +208,19 @@ void Sintactico::configurarGramatica() {
 
     // NT_I y NT_I_PRIMA
     tablaM[NT_I-100][T_ID] = 17; tablaM[NT_I-100][T_ASTERISCO] = 18;
-    tablaM[NT_I_PRIMA-100][T_PUNTO_COMA] = 20; tablaM[NT_I_PRIMA-100][T_CORCH_I] = 19; tablaM[NT_I_PRIMA-100][T_COMA] = 20;
+    tablaM[NT_I_PRIMA-100][T_PUNTO_COMA] = 20;
+    tablaM[NT_I_PRIMA-100][T_CORCH_I] = 19; tablaM[NT_I_PRIMA-100][T_COMA] = 20;
     tablaM[NT_I_PRIMA - 100][T_IGUAL] = 51;
 
+    // NT_A_PRIMA
+    // Si A ve '[', debe aplicar la regla 21: A -> [K]A'
+    tablaM[NT_A-100][T_CORCH_I] = 21;
+    // Si después de un ']' ve otro '[', es multi-arreglo (Regla 22: A' -> [K]A')
+    tablaM[NT_A_PRIMA-100][T_CORCH_I] = 22;
+    // Si ve ';', ',', o ')', el arreglo terminó (Regla 23: A' -> epsilon)
+    tablaM[NT_A_PRIMA-100][T_PUNTO_COMA] = 23;
+    tablaM[NT_A_PRIMA-100][T_COMA] = 23;
+    tablaM[NT_A_PRIMA-100][T_PAR_D] = 23;
     // NT_K
     tablaM[NT_K-100][T_ID] = 24; tablaM[NT_K-100][T_NUM] = 25;
 
@@ -249,7 +260,10 @@ void Sintactico::configurarGramatica() {
 
     // NT_O y NT_O_PRIMA
     tablaM[NT_O-100][T_ID] = 38; tablaM[NT_O-100][T_NUM] = 38;
-    tablaM[NT_O_PRIMA-100][T_AND] = 39; tablaM[NT_O_PRIMA-100][T_OR] = 39; tablaM[NT_O_PRIMA-100][T_PAR_D] = 40;
+    tablaM[NT_O_PRIMA-100][T_AND] = 39; tablaM[NT_O_PRIMA-100][T_OR] = 39;
+    // Esto permite que las condiciones (O) terminen cuando vean un ";" o un ")"
+    tablaM[NT_O_PRIMA-100][T_PUNTO_COMA] = 40; // O' -> epsilon (Regla 40)
+    tablaM[NT_O_PRIMA-100][T_PAR_D] = 40;     // O' -> epsilon (Regla 40)
 
     // NT_LOP y NT_OP
     tablaM[NT_LOP-100][T_AND] = 41; tablaM[NT_LOP-100][T_OR] = 42;
