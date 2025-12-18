@@ -20,8 +20,7 @@ HEADERS += \
     sintactico.h \
     tabladesimbolos.h
 
-FORMS += \
-    sintactico.ui
+FORMS +=
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
