@@ -20,9 +20,10 @@ void Sintactico::inicializarDiccionarios() {
     tokenToEnum["Cte.Lit"] = T_CTE_LIT; tokenToEnum["="] = T_IGUAL;
     tokenToEnum["||"] = T_OR;         tokenToEnum["&&"] = T_AND;
     tokenToEnum["<"] = T_MENOR;       tokenToEnum[">"] = T_MAYOR;
-    tokenToEnum["=>"] = T_MAYOR_IGUAL; tokenToEnum["=<"] = T_MENOR_IGUAL;
+    // tokenToEnum["=>"] = T_MAYOR_IGUAL; tokenToEnum["=<"] = T_MENOR_IGUAL;
     tokenToEnum["=="] = T_IGUAL_IGUAL; tokenToEnum["!="] = T_DIFERENTE;
-    tokenToEnum["Real"] = T_REAL;     tokenToEnum["$"] = T_PESOS;
+//    tokenToEnum["Real"] = T_REAL;
+    tokenToEnum["$"] = T_PESOS;
 
     for (auto const& [key, val] : tokenToEnum) idToString[val] = key;
 
@@ -137,15 +138,16 @@ void Sintactico::configurarGramatica() {
     gramatica[48] = Produccion(48, NT_OP, {T_MAYOR});
     gramatica[49] = Produccion(49, NT_OP, {T_IGUAL_IGUAL});
     gramatica[50] = Produccion(50, NT_OP, {T_DIFERENTE});
-    gramatica[51] = Produccion(51, NT_OP, {T_MAYOR_IGUAL});
-    gramatica[52] = Produccion(52, NT_OP, {T_MENOR_IGUAL});
+    // gramatica[51] = Produccion(51, NT_OP, {T_MAYOR_IGUAL});
+    // gramatica[52] = Produccion(52, NT_OP, {T_MENOR_IGUAL});
 
     // ============================================================
     // 2. LLENADO DE LA TABLA M [Fila: NT-100][Columna: T]
     // ============================================================
 
     // NT_S
-    tablaM[NT_S-100][T_ID] = 1; tablaM[NT_S-100][T_ASTERISCO] = 1; tablaM[NT_S-100][T_IF] = 2;
+    //tablaM[NT_S-100][T_ID] = 1; tablaM[NT_S-100][T_ASTERISCO] = 1;
+    tablaM[NT_S-100][T_IF] = 2;
     tablaM[NT_S-100][T_WHILE] = 3; tablaM[NT_S-100][T_FOR] = 4;
     tablaM[NT_S-100][T_INT] = 1; tablaM[NT_S-100][T_FLOAT] = 1; tablaM[NT_S-100][T_CHAR] = 1;
 
@@ -197,7 +199,7 @@ void Sintactico::configurarGramatica() {
     tablaM[NT_LOP-100][T_AND] = 41; tablaM[NT_LOP-100][T_OR] = 42;
     tablaM[NT_OP-100][T_MENOR] = 47; tablaM[NT_OP-100][T_MAYOR] = 48;
     tablaM[NT_OP-100][T_IGUAL_IGUAL] = 49; tablaM[NT_OP-100][T_DIFERENTE] = 50;
-    tablaM[NT_OP-100][T_MAYOR_IGUAL] = 51; tablaM[NT_OP-100][T_MENOR_IGUAL] = 52;
+//    tablaM[NT_OP-100][T_MAYOR_IGUAL] = 51; tablaM[NT_OP-100][T_MENOR_IGUAL] = 52;
 
     // NT_R y NT_V
     tablaM[NT_R-100][T_ID] = 43; tablaM[NT_R-100][T_NUM] = 43;
@@ -206,7 +208,7 @@ void Sintactico::configurarGramatica() {
 
 void Sintactico::ejecutar(char asTokens[500][100], int k) {
     int ip = 0;
-    miPila.pop();
+    //miPila.pop();
     miPila.push("$");
     miPila.push("S");
 
@@ -257,81 +259,3 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
     }
 }
 
-
-/*#include "sintactico.h"
-
-Sintactico::Sintactico() {
-    inicializar();
-}
-
-void Sintactico::inicializar() {
-    // 1. Mapeo de nombres para que el sintáctico entienda al léxico
-    tokenToEnum["id"] = T_ID;         tokenToEnum["num"] = T_NUM;
-    tokenToEnum["int"] = T_INT;       tokenToEnum["float"] = T_FLOAT;
-    tokenToEnum[";"] = T_PUNTO_COMA;  tokenToEnum["="] = T_IGUAL;
-    tokenToEnum["$"] = T_PESOS;       // ... agregar todos los de tu enum
-
-    // 2. Nombres para imprimir en consola
-    idToString[NT_S] = "S"; idToString[NT_D] = "D"; idToString[T_ID] = "id";
-    // ... agregar para que el log se vea bonito
-
-    // 3. Inicializar Tabla M con error (999)
-    for(int i=0; i<25; i++) for(int j=0; j<32; j++) tablaM[i][j] = 999;
-
-    // 4. CARGAR REGLAS (Aquí traduces tu Excel)
-    // Ejemplo: Regla 1: D -> T L ; (En la pila entra: ; L T)
-    gramatica[1] = {1, NT_D, {T_PUNTO_COMA, NT_L, NT_T}};
-    tablaM[NT_D - 100][T_INT] = 1;
-    tablaM[NT_D - 100][T_FLOAT] = 1;
-}
-
-void Sintactico::ejecutar(char asTokens[500][100], int k) {
-    int ip = 0;
-    miPila.pop();
-    miPila.push("$");
-    miPila.push("S");
-
-    cout << "INICIANDO ANALISIS..." << endl;
-
-    while(true) {
-        string X_str = miPila.top(); // Tope de pila
-        string a_str = asTokens[ip]; // Token actual
-
-        // Convertir strings a Enums para comparar
-        int X_val = (X_str == "S") ? NT_S : (X_str == "D") ? NT_D : tokenToEnum[X_str];
-        int a_val = tokenToEnum[a_str];
-
-        if (X_val < 100 || X_val == T_PESOS) { // Es Terminal
-            if (X_str == a_str) {
-                cout << "Match: " << X_str << endl;
-                miPila.pop();
-                ip++;
-                if (X_str == "$") {
-                    cout << "CADENA ACEPTADA" << endl;
-                    break;
-                }
-            } else {
-                cout << "ERROR: Se esperaba " << X_str << " y llego " << a_str << endl;
-                break;
-            }
-        } else { // Es No Terminal
-            int renglonRegla = tablaM[X_val - 100][a_val];
-            if (renglonRegla != 999) {
-                miPila.pop();
-                Produccion p = gramatica[renglonRegla];
-
-                // Meter al revés
-                for (int simbolo : p.ladoDerecho) {
-                    // Convertir el ID del símbolo a string para la pila
-                    string nom = (simbolo >= 100) ? idToString[simbolo] : idToString[simbolo];
-                    miPila.push(nom);
-                }
-                cout << "Regla aplicada: " << idToString[p.ladoIzquierdo] << " -> rule " << renglonRegla << endl;
-            } else {
-                cout << "ERROR SINTACTICO en token: " << a_str << endl;
-                break;
-            }
-        }
-    }
-}
-*/

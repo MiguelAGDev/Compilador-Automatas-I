@@ -103,21 +103,24 @@ void Lexico::scanner(const char cadena[255]) {
                 initialize(); startToken = i;
             }
             break;
-
         case 9: // DECIMALES
             if (isDigit(caracter)) {
                 i++;
                 while (i < (int)len && isDigit(buffer[i])) i++;
-                strcpy(asTokens[k++], "Real");
+                strcpy(asTokens[k++], "num");   // ← ESTO
                 initialize(); startToken = i;
-            } else onFailure();
-            break;
+            }
 
-        case 11: // ASIGNACION / IGUALDAD / FLECHA
-            if (caracter == '=') { i++; strcpy(asTokens[k++], "=="); }
-            else if (caracter == '>') { i++; strcpy(asTokens[k++], "=>"); }
-            else { strcpy(asTokens[k++], "="); }
-            initialize(); startToken = i;
+
+        case 11:
+            if (caracter == '=') {
+                i++;
+                strcpy(asTokens[k++], "==");
+            } else {
+                strcpy(asTokens[k++], "=");
+            }
+            initialize();
+            startToken = i;
             break;
 
         case 15: // DIFERENTE
@@ -126,16 +129,17 @@ void Lexico::scanner(const char cadena[255]) {
             initialize(); startToken = i;
             break;
 
-        case 19: // MAYOR O IGUAL
-            if (caracter == '=') { i++; strcpy(asTokens[k++], "=>"); }
-            else { strcpy(asTokens[k++], ">"); }
-            initialize(); startToken = i;
+        case 19:
+            strcpy(asTokens[k++], ">");
+            initialize();
+            startToken = i;
             break;
 
-        case 23: // MENOR O IGUAL
-            if (caracter == '=') { i++; strcpy(asTokens[k++], "=<"); }
-            else { strcpy(asTokens[k++], "<"); }
-            initialize(); startToken = i;
+
+        case 23:
+            strcpy(asTokens[k++], "<");
+            initialize();
+            startToken = i;
             break;
 
         case 25: // INICIO CADENA

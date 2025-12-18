@@ -15,8 +15,8 @@ enum Terminales {
     T_ID, T_ASTERISCO, T_COMA, T_PUNTO_COMA, T_PAR_I, T_PAR_D,
     T_CORCH_I, T_CORCH_D, T_LLAVE_I, T_LLAVE_D, T_IF, T_ELSE,
     T_WHILE, T_FOR, T_INT, T_FLOAT, T_CHAR, T_BOOL, T_STRING,
-    T_NUM, T_CTE_LIT, T_IGUAL, T_OR, T_AND, T_MENOR, T_MAYOR_IGUAL,
-    T_MENOR_IGUAL, T_MAYOR, T_IGUAL_IGUAL, T_DIFERENTE,
+    T_NUM, T_CTE_LIT, T_IGUAL, T_OR, T_AND, T_MENOR, /*T_MAYOR_IGUAL,/*
+    /*T_MENOR_IGUAL*/ T_MAYOR, T_IGUAL_IGUAL, T_DIFERENTE,
     T_REAL,    // <-- Agregado para corregir el error
     T_PESOS,
     T_EPSILON, // <-- Para reglas vacías
