@@ -1,8 +1,7 @@
-#include <iostream>
 #include <string>
 #include "lexico.h"
 #include "sintactico.h"
-
+#include <iostream>
 using namespace std;
 
 int main() {

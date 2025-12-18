@@ -89,7 +89,7 @@ void Lexico::scanner(const char cadena[255]) {
                     lex == "string" || lex == "if" || lex == "else" || lex == "while" || lex == "for")
                     strcpy(asTokens[k++], lex.c_str());
                 else
-                    strcpy(asTokens[k++], "id");
+                    strcpy(asTokens[k++], "id"); // Genera "id" en minúsculas
                 initialize(); startToken = i;
             }
             break;
@@ -111,7 +111,7 @@ void Lexico::scanner(const char cadena[255]) {
                 strcpy(asTokens[k++], "num");   // ← ESTO
                 initialize(); startToken = i;
             }
-
+            break;
 
         case 11:
             if (caracter == '=') {

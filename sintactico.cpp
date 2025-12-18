@@ -138,6 +138,10 @@ void Sintactico::configurarGramatica() {
     gramatica[48] = Produccion(48, NT_OP, {T_MAYOR});
     gramatica[49] = Produccion(49, NT_OP, {T_IGUAL_IGUAL});
     gramatica[50] = Produccion(50, NT_OP, {T_DIFERENTE});
+    // Supongamos que usamos el ID 51 para esta nueva regla
+    // La pila recibe los elementos al revés: primero V y luego =
+    gramatica[51] = Produccion(51, NT_I_PRIMA, {NT_V, T_IGUAL});
+
     // gramatica[51] = Produccion(51, NT_OP, {T_MAYOR_IGUAL});
     // gramatica[52] = Produccion(52, NT_OP, {T_MENOR_IGUAL});
 
@@ -173,6 +177,7 @@ void Sintactico::configurarGramatica() {
     // NT_I y NT_I_PRIMA
     tablaM[NT_I-100][T_ID] = 17; tablaM[NT_I-100][T_ASTERISCO] = 18;
     tablaM[NT_I_PRIMA-100][T_PUNTO_COMA] = 20; tablaM[NT_I_PRIMA-100][T_CORCH_I] = 19; tablaM[NT_I_PRIMA-100][T_COMA] = 20;
+    tablaM[NT_I_PRIMA - 100][T_IGUAL] = 51;
 
     // NT_K
     tablaM[NT_K-100][T_ID] = 24; tablaM[NT_K-100][T_NUM] = 25;
@@ -226,22 +231,40 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         // else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
 
         int idX = -1;
-        if(X_str == "S") idX = NT_S;
-        else if(X_str == "D") idX = NT_D;
-        else if(X_str == "T") idX = NT_T;
-        else if(X_str == "C") idX = NT_C;
-        else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
-
         // Reemplaza esos "if/else if" por un mapa completo o agrega los que faltan:
         if(X_str == "S") idX = NT_S;
         else if(X_str == "B") idX = NT_B;
         else if(X_str == "C") idX = NT_C;
         else if(X_str == "D") idX = NT_D;
-        else if(X_str == "W") idX = NT_W;   // Para que jale el while
-        else if(X_str == "FR") idX = NT_FR; // Para que jale el for
+        else if(X_str == "T") idX = NT_T;
+        else if(X_str == "L") idX = NT_L;
+        else if(X_str == "L'") idX = NT_L_PRIMA;
+        else if(X_str == "I") idX = NT_I;
+        else if(X_str == "I'") idX = NT_I_PRIMA;
+        else if(X_str == "A") idX = NT_A;
+        else if(X_str == "A'") idX = NT_A_PRIMA;
+        else if(X_str == "K") idX = NT_K;
+        else if(X_str == "J") idX = NT_J;
+        else if(X_str == "J'") idX = NT_J_PRIMA;
+        else if(X_str == "W") idX = NT_W;   // Reconoce el No Terminal del While
+        else if(X_str == "FR") idX = NT_FR; // Reconoce el No Terminal del For
+        else if(X_str == "FI") idX = NT_FI;
+        else if(X_str == "FC") idX = NT_FC;
+        else if(X_str == "FA") idX = NT_FA;
         else if(X_str == "O") idX = NT_O;
+        else if(X_str == "O'") idX = NT_O_PRIMA;
+        else if(X_str == "LOP") idX = NT_LOP;
+        else if(X_str == "R") idX = NT_R;
+        else if(X_str == "V") idX = NT_V;
+        else if(X_str == "Op") idX = NT_OP;
         else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
 
+
+        // Validación para evitar el truene
+        if (idX == -1) {
+            std::cout << "ERROR CRITICO: Simbolo en pila desconocido: " << X_str << std::endl;
+            break;
+        }
         int idA = tokenToEnum.count(a_str) ? tokenToEnum[a_str] : T_ERROR;
 
         if (idX < 100 || idX == T_PESOS) {
