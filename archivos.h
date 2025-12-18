@@ -7,36 +7,38 @@
 using namespace std;
 
 /**
- * @brief The archivos class
- * Gestiona la lectura de archivos. Encapsula, lectura de
- * caracter por caracter, cierra del archivo.
+ * @brief Clase archivos
+ * Proporciona una abstracción para el manejo de archivos de texto,
+ * permitiendo abrir, leer carácter por carácter y cerrar archivos
+ * de forma controlada.
  */
 class archivos
 {
     /**
      * @brief archivoEntrada
-     * Flujo de lectura del archivo
+     * Flujo de entrada utilizado para leer el contenido del archivo.
      */
     ifstream archivoEntrada;
 
     /**
      * @brief nombreArchivo
-     * ruta del archivo
+     * Almacena el nombre o la ruta completa del archivo a procesar.
      */
     string nombreArchivo;
 public:
     /**
-     * @brief Constructor de la clase archivos.
-     * Inicializa un objeto de la clase archivos asignando
-     * el nombre o ruta del archivo que será utilizado.
-     * @param nombre Cadena que representa el nombre o la ruta del archivo.
+     * @brief Constructor de la clase archivos
+     * Inicializa el objeto asignando el nombre o ruta del archivo
+     * que se utilizará para la lectura.
+     * @param nombre Nombre o ruta del archivo de entrada.
      */
     archivos(string nombre) : nombreArchivo(nombre) {}
 
 
     /**
-     * @brief abrir Abre el archivo en modo lectura
-     * @return bool retorna si la accion de arbrir el archivo se produjo
+     * @brief abrir
+     * Intenta abrir el archivo asociado al objeto en modo lectura.
+     * @return true si el archivo se abrió correctamente, false en caso contrario.
      */
     bool abrir(){
         archivoEntrada.open(nombreArchivo.c_str());
@@ -50,7 +52,8 @@ public:
     }
 
     /**
-     * @brief cerra Cierra el archivo si esta abierto
+     * @brief cerra
+     * Cierra el archivo de entrada si actualmente se encuentra abierto.
      */
     void cerra(){
         if(archivoEntrada.is_open())
@@ -59,12 +62,14 @@ public:
 
 
     /**
-     * @brief leerCaracter lee el siguiente caracter del archivo
-     * @return char El caracter leido o EOF si llego al final.
+     * @brief leerCaracter
+     * Obtiene el siguiente carácter disponible del archivo,
+     * incluyendo espacios y saltos de línea.
+     * @return El carácter leído o EOF si se alcanzó el final del archivo.
      */
     char leerCaracter() {
         char c;
-        // get() lee incluyendo espacios y saltos de linea
+        // Lectura directa del siguiente carácter del flujo
         if (archivoEntrada.get(c)) {
             return c;
         }
@@ -72,8 +77,9 @@ public:
     }
 
     /**
-     * @brief Verifica fin de archivo
-     * @return true si ya no hay mas datos.
+     * @brief finDeArchivo
+     * Indica si el flujo de entrada ha alcanzado el final del archivo.
+     * @return true si no quedan más datos por leer.
      */
     bool finDeArchivo() {
         return archivoEntrada.eof();

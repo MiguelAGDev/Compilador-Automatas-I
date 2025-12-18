@@ -1,5 +1,6 @@
 #include "sintactico.h"
 #include <iomanip>
+#include <vector>
 
 Sintactico::Sintactico() {
     inicializarDiccionarios();
@@ -20,35 +21,30 @@ void Sintactico::inicializarDiccionarios() {
     tokenToEnum["Cte.Lit"] = T_CTE_LIT; tokenToEnum["="] = T_IGUAL;
     tokenToEnum["||"] = T_OR;         tokenToEnum["&&"] = T_AND;
     tokenToEnum["<"] = T_MENOR;       tokenToEnum[">"] = T_MAYOR;
-    // tokenToEnum["=>"] = T_MAYOR_IGUAL; tokenToEnum["=<"] = T_MENOR_IGUAL;
     tokenToEnum["=="] = T_IGUAL_IGUAL; tokenToEnum["!="] = T_DIFERENTE;
     tokenToEnum["+"] = T_MAS;   tokenToEnum["-"] = T_MENOS;
-
-//    tokenToEnum["Real"] = T_REAL;
     tokenToEnum["$"] = T_PESOS;
 
+    // Llenamos el mapa inverso para imprimir nombres de TERMINALES
     for (auto const& [key, val] : tokenToEnum) idToString[val] = key;
 
+    // Llenamos nombres de NO TERMINALES
     idToString[NT_S] = "S"; idToString[NT_B] = "B"; idToString[NT_C] = "C";
     idToString[NT_D] = "D"; idToString[NT_T] = "T"; idToString[NT_L] = "L";
     idToString[NT_L_PRIMA] = "L'"; idToString[NT_I] = "I"; idToString[NT_I_PRIMA] = "I'";
     idToString[NT_A] = "A"; idToString[NT_A_PRIMA] = "A'"; idToString[NT_K] = "K";
     idToString[NT_J] = "J"; idToString[NT_J_PRIMA] = "J'"; idToString[NT_W] = "W";
     idToString[NT_FR] = "FR"; idToString[NT_FI] = "FI"; idToString[NT_FC] = "FC";
-    idToString[NT_FA] = "FA"; idToString[NT_FA_PRIMA] = "FA'"; // Si usas FA', en ejecutar() debe ser "FA'"
+    idToString[NT_FA] = "FA"; idToString[NT_FA_PRIMA] = "FA'";
     idToString[NT_O] = "O"; idToString[NT_O_PRIMA] = "O'";
     idToString[NT_LOP] = "LOP"; idToString[NT_R] = "R"; idToString[NT_V] = "V";
     idToString[NT_OP] = "Op";
 }
 
 void Sintactico::configurarGramatica() {
-    // Inicializar toda la tabla con 999 (Error)
     for(int i=0; i<30; i++) for(int j=0; j<40; j++) tablaM[i][j] = 999;
 
-    // ============================================================
-    // 1. DEFINICIÓN DE TODAS LAS PRODUCCIONES (Gramatica)
-    // Nota: El lado derecho se guarda invertido para la pila
-    // ============================================================
+    // --- DEFINICIÓN DE PRODUCCIONES ---
 
     // S -> D | J | W | FR
     gramatica[1] = Produccion(1, NT_S, {NT_D});
@@ -73,8 +69,9 @@ void Sintactico::configurarGramatica() {
     gramatica[12] = Produccion(12, NT_T, {T_BOOL});
     gramatica[13] = Produccion(13, NT_T, {T_STRING});
 
-    // L -> I L' | L' -> , I L' | e
+    // L -> I L'
     gramatica[14] = Produccion(14, NT_L, {NT_L_PRIMA, NT_I});
+    // L' -> , I L' | e
     gramatica[15] = Produccion(15, NT_L_PRIMA, {NT_L_PRIMA, NT_I, T_COMA});
     gramatica[16] = Produccion(16, NT_L_PRIMA, {T_EPSILON});
 
@@ -82,12 +79,14 @@ void Sintactico::configurarGramatica() {
     gramatica[17] = Produccion(17, NT_I, {NT_I_PRIMA, T_ID});
     gramatica[18] = Produccion(18, NT_I, {NT_I_PRIMA, T_ID, T_ASTERISCO});
 
-    // I' -> A | e
-    gramatica[19] = Produccion(19, NT_I_PRIMA, {NT_A});
+    // I' -> A I' | e
+    gramatica[19] = Produccion(19, NT_I_PRIMA, {NT_I_PRIMA, NT_A});
     gramatica[20] = Produccion(20, NT_I_PRIMA, {T_EPSILON});
 
-    // A -> [ K ] A' | A' -> [ K ] A' | e
-    gramatica[21] = Produccion(21, NT_A, {NT_A_PRIMA, T_CORCH_D, NT_K, T_CORCH_I});
+    // A -> [ K ]
+    gramatica[21] = Produccion(21, NT_A, {T_CORCH_D, NT_K, T_CORCH_I});
+
+    // A' -> [ K ] A' | e
     gramatica[22] = Produccion(22, NT_A_PRIMA, {NT_A_PRIMA, T_CORCH_D, NT_K, T_CORCH_I});
     gramatica[23] = Produccion(23, NT_A_PRIMA, {T_EPSILON});
 
@@ -95,8 +94,9 @@ void Sintactico::configurarGramatica() {
     gramatica[24] = Produccion(24, NT_K, {T_ID});
     gramatica[25] = Produccion(25, NT_K, {T_NUM});
 
-    // J -> if ( O ) B J' | J' -> else B | e
+    // J -> if ( O ) B J'
     gramatica[26] = Produccion(26, NT_J, {NT_J_PRIMA, NT_B, T_PAR_D, NT_O, T_PAR_I, T_IF});
+    // J' -> else B | e
     gramatica[27] = Produccion(27, NT_J_PRIMA, {NT_B, T_ELSE});
     gramatica[28] = Produccion(28, NT_J_PRIMA, {T_EPSILON});
 
@@ -104,13 +104,9 @@ void Sintactico::configurarGramatica() {
     gramatica[29] = Produccion(29, NT_W, {NT_B, T_PAR_D, NT_O, T_PAR_I, T_WHILE});
 
     // FR -> for ( FI ; FC ; FA ) B
-   gramatica[30] = Produccion(30, NT_FR, {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, T_PUNTO_COMA, NT_FI, T_PAR_I, T_FOR});
-    // Antes: {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, T_PUNTO_COMA, NT_FI, T_PAR_I, T_FOR}
-    // Ahora quitamos el primer T_PUNTO_COMA porque FI (D) ya lo entrega:
-    // gramatica[30] = Produccion(30, NT_FR, {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, NT_FI, T_PAR_I, T_FOR});
+    gramatica[30] = Produccion(30, NT_FR, {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, T_PUNTO_COMA, NT_FI, T_PAR_I, T_FOR});
 
-    // FI -> TL | id = V | e
-    // CON ESTE SE COMPIA EL PUNTO Y COMO HACIENDO ESOT for(;;;)- > gramatica[31] = Produccion(31, NT_FI, {NT_D});
+    // FI -> L T | id = V | e
     gramatica[31] = Produccion(31, NT_FI, {NT_L, NT_T});
     gramatica[32] = Produccion(32, NT_FI, {NT_V, T_IGUAL, T_ID});
     gramatica[33] = Produccion(33, NT_FI, {T_EPSILON});
@@ -119,34 +115,21 @@ void Sintactico::configurarGramatica() {
     gramatica[34] = Produccion(34, NT_FC, {NT_O});
     gramatica[35] = Produccion(35, NT_FC, {T_EPSILON});
 
-    /* -- ANTERIOR -- ANTERIOR -- ANTERIOR -- ANTERIOR -- */
-    // // FA -> id = V | e
-    // gramatica[36] = Produccion(36, NT_FA, {NT_V, T_IGUAL, T_ID});
-    // gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
-
-    /* -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- */
-    // --- FA: Actualización del for ---
-    // FA -> id FA' (Cubre id++ / id-- / id=V)
+    // FA -> id FA' | ++ id | -- id | e
     gramatica[36] = Produccion(36, NT_FA, {NT_FA_PRIMA, T_ID});
-    // FA -> ++ id (Pre-incremento)
-    gramatica[52] = Produccion(52, NT_FA, {T_ID, T_MAS, T_MAS});
-    // FA -> -- id (Pre-decremento)
-    gramatica[56] = Produccion(56, NT_FA, {T_ID, T_MENOS, T_MENOS});
-    // FA -> epsilon
     gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
+    gramatica[52] = Produccion(52, NT_FA, {T_ID, T_MAS, T_MAS});
+    gramatica[56] = Produccion(56, NT_FA, {T_ID, T_MENOS, T_MENOS});
 
-    // --- FA_PRIMA: Qué sigue al ID ---
-    // FA' -> ++
+    // FA' -> ++ | -- | = V | e
     gramatica[53] = Produccion(53, NT_FA_PRIMA, {T_MAS, T_MAS});
-    // FA' -> --
     gramatica[54] = Produccion(54, NT_FA_PRIMA, {T_MENOS, T_MENOS});
-    // FA' -> = V
     gramatica[51] = Produccion(51, NT_FA_PRIMA, {NT_V, T_IGUAL});
-    // FA' -> epsilon
     gramatica[55] = Produccion(55, NT_FA_PRIMA, {T_EPSILON});
 
-    // O -> R O' | O' -> LOP R O' | e
+    // O -> R O'
     gramatica[38] = Produccion(38, NT_O, {NT_O_PRIMA, NT_R});
+    // O' -> LOP R O' | e
     gramatica[39] = Produccion(39, NT_O_PRIMA, {NT_O_PRIMA, NT_R, NT_LOP});
     gramatica[40] = Produccion(40, NT_O_PRIMA, {T_EPSILON});
 
@@ -162,37 +145,31 @@ void Sintactico::configurarGramatica() {
     gramatica[45] = Produccion(45, NT_V, {T_NUM});
     gramatica[46] = Produccion(46, NT_V, {T_CTE_LIT});
 
-    // Op -> < | > | == | != | => | =<
+    // Op -> < | > | == | !=
     gramatica[47] = Produccion(47, NT_OP, {T_MENOR});
     gramatica[48] = Produccion(48, NT_OP, {T_MAYOR});
     gramatica[49] = Produccion(49, NT_OP, {T_IGUAL_IGUAL});
     gramatica[50] = Produccion(50, NT_OP, {T_DIFERENTE});
-    // Supongamos que usamos el ID 51 para esta nueva regla
-    // La pila recibe los elementos al revés: primero V y luego =
-    gramatica[51] = Produccion(51, NT_I_PRIMA, {NT_V, T_IGUAL});
 
-    // gramatica[51] = Produccion(51, NT_OP, {T_MAYOR_IGUAL});
-    // gramatica[52] = Produccion(52, NT_OP, {T_MENOR_IGUAL});
 
     // ============================================================
-    // 2. LLENADO DE LA TABLA M [Fila: NT-100][Columna: T]
+    // LLENADO DE LA TABLA M
     // ============================================================
 
     // NT_S
-    //tablaM[NT_S-100][T_ID] = 1; tablaM[NT_S-100][T_ASTERISCO] = 1;
     tablaM[NT_S-100][T_IF] = 2;
     tablaM[NT_S-100][T_WHILE] = 3; tablaM[NT_S-100][T_FOR] = 4;
     tablaM[NT_S-100][T_INT] = 1; tablaM[NT_S-100][T_FLOAT] = 1; tablaM[NT_S-100][T_CHAR] = 1;
-    // En la sección de NT_S
-    tablaM[NT_S-100][T_BOOL] = 1;   // Para que bool mande a Declaración
-    tablaM[NT_S-100][T_STRING] = 1; // Para que string mande a Declaración
+    tablaM[NT_S-100][T_BOOL] = 1; tablaM[NT_S-100][T_STRING] = 1;
 
     // NT_B
     tablaM[NT_B-100][T_LLAVE_I] = 5;
 
     // NT_C
     tablaM[NT_C-100][T_ID] = 6; tablaM[NT_C-100][T_IF] = 6; tablaM[NT_C-100][T_WHILE] = 6;
-    tablaM[NT_C-100][T_FOR] = 6; tablaM[NT_C-100][T_INT] = 6; tablaM[NT_C-100][T_LLAVE_D] = 7;
+    tablaM[NT_C-100][T_FOR] = 6; tablaM[NT_C-100][T_INT] = 6; tablaM[NT_C-100][T_FLOAT] = 6;
+    tablaM[NT_C-100][T_CHAR] = 6; tablaM[NT_C-100][T_BOOL] = 6; tablaM[NT_C-100][T_STRING] = 6;
+    tablaM[NT_C-100][T_LLAVE_D] = 7; tablaM[NT_C-100][T_PESOS] = 7;
 
     // NT_D
     tablaM[NT_D-100][T_INT] = 8; tablaM[NT_D-100][T_FLOAT] = 8; tablaM[NT_D-100][T_CHAR] = 8;
@@ -212,22 +189,21 @@ void Sintactico::configurarGramatica() {
     tablaM[NT_I_PRIMA-100][T_CORCH_I] = 19; tablaM[NT_I_PRIMA-100][T_COMA] = 20;
     tablaM[NT_I_PRIMA - 100][T_IGUAL] = 51;
 
-    // NT_A_PRIMA
-    // Si A ve '[', debe aplicar la regla 21: A -> [K]A'
+    // NT_A y NT_A_PRIMA
     tablaM[NT_A-100][T_CORCH_I] = 21;
-    // Si después de un ']' ve otro '[', es multi-arreglo (Regla 22: A' -> [K]A')
     tablaM[NT_A_PRIMA-100][T_CORCH_I] = 22;
-    // Si ve ';', ',', o ')', el arreglo terminó (Regla 23: A' -> epsilon)
-    tablaM[NT_A_PRIMA-100][T_PUNTO_COMA] = 23;
-    tablaM[NT_A_PRIMA-100][T_COMA] = 23;
+    tablaM[NT_A_PRIMA-100][T_PUNTO_COMA] = 23; tablaM[NT_A_PRIMA-100][T_COMA] = 23;
     tablaM[NT_A_PRIMA-100][T_PAR_D] = 23;
+
     // NT_K
     tablaM[NT_K-100][T_ID] = 24; tablaM[NT_K-100][T_NUM] = 25;
 
     // NT_J y NT_J_PRIMA
     tablaM[NT_J-100][T_IF] = 26;
-    tablaM[NT_J_PRIMA-100][T_ELSE] = 27; tablaM[NT_J_PRIMA-100][T_ID] = 28;
-    tablaM[NT_J_PRIMA-100][T_INT] = 28; tablaM[NT_J_PRIMA-100][T_LLAVE_D] = 28;
+    tablaM[NT_J_PRIMA-100][T_ELSE] = 27;
+    tablaM[NT_J_PRIMA-100][T_ID] = 28; tablaM[NT_J_PRIMA-100][T_INT] = 28;
+    tablaM[NT_J_PRIMA-100][T_LLAVE_D] = 28; tablaM[NT_J_PRIMA-100][T_WHILE] = 28;
+    tablaM[NT_J_PRIMA-100][T_FOR] = 28; tablaM[NT_J_PRIMA-100][T_PESOS] = 28;
 
     // NT_W y NT_FR
     tablaM[NT_W-100][T_WHILE] = 29;
@@ -235,69 +211,33 @@ void Sintactico::configurarGramatica() {
 
     // NT_FI, NT_FC, NT_FA
     tablaM[NT_FI-100][T_INT] = 31; tablaM[NT_FI-100][T_ID] = 32; tablaM[NT_FI-100][T_PUNTO_COMA] = 33;
-    // tablaM[NT_FC-100][T_ID] = 34; tablaM[NT_FC-100][T_NUM] = 34; tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
-    // tablaM[NT_FA-100][T_ID] = 36; tablaM[NT_FA-100][T_PAR_D] = 37;
+    tablaM[NT_FC-100][T_ID] = 34; tablaM[NT_FC-100][T_NUM] = 34; tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
+    tablaM[NT_FA-100][T_ID] = 36; tablaM[NT_FA-100][T_MAS] = 52; tablaM[NT_FA-100][T_MENOS] = 56;
+    tablaM[NT_FA-100][T_PAR_D] = 37;
 
-    // --- TABLA M PARA FC (Condición) ---
-    // Si FC ve un ID o Número, intenta procesar la operación (O)
-    tablaM[NT_FC-100][T_ID] = 34;
-    tablaM[NT_FC-100][T_NUM] = 34;
-    // Si FC ve un ";", la condición es vacía (Epsilon)
-    tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
-
-    // --- TABLA M PARA FA ---
-    tablaM[NT_FA-100][T_ID] = 36;      // Si ve 'a' -> regla 36
-    tablaM[NT_FA-100][T_MAS] = 52;     // Si ve '+' -> regla 52 (++a)
-    tablaM[NT_FA-100][T_MENOS] = 56;   // Si ve '-' -> regla 56 (--a)
-    tablaM[NT_FA-100][T_PAR_D] = 37;   // Si ve ')' -> regla 37 (epsilon)
-
-    // --- TABLA M PARA FA_PRIMA ---
-    tablaM[NT_FA_PRIMA-100][T_MAS] = 53;   // id++
-    tablaM[NT_FA_PRIMA-100][T_MENOS] = 54; // id--
-    tablaM[NT_FA_PRIMA-100][T_IGUAL] = 51; // id=V
-    tablaM[NT_FA_PRIMA-100][T_PAR_D] = 55; // id) -> epsilon
-
+    // NT_FA_PRIMA
+    tablaM[NT_FA_PRIMA-100][T_MAS] = 53; tablaM[NT_FA_PRIMA-100][T_MENOS] = 54;
+    tablaM[NT_FA_PRIMA-100][T_IGUAL] = 51; tablaM[NT_FA_PRIMA-100][T_PAR_D] = 55;
 
     // NT_O y NT_O_PRIMA
     tablaM[NT_O-100][T_ID] = 38; tablaM[NT_O-100][T_NUM] = 38;
     tablaM[NT_O_PRIMA-100][T_AND] = 39; tablaM[NT_O_PRIMA-100][T_OR] = 39;
-    // Esto permite que las condiciones (O) terminen cuando vean un ";" o un ")"
-    tablaM[NT_O_PRIMA-100][T_PUNTO_COMA] = 40; // O' -> epsilon (Regla 40)
-    tablaM[NT_O_PRIMA-100][T_PAR_D] = 40;     // O' -> epsilon (Regla 40)
+    tablaM[NT_O_PRIMA-100][T_PUNTO_COMA] = 40; tablaM[NT_O_PRIMA-100][T_PAR_D] = 40;
 
     // NT_LOP y NT_OP
     tablaM[NT_LOP-100][T_AND] = 41; tablaM[NT_LOP-100][T_OR] = 42;
     tablaM[NT_OP-100][T_MENOR] = 47; tablaM[NT_OP-100][T_MAYOR] = 48;
     tablaM[NT_OP-100][T_IGUAL_IGUAL] = 49; tablaM[NT_OP-100][T_DIFERENTE] = 50;
-//    tablaM[NT_OP-100][T_MAYOR_IGUAL] = 51; tablaM[NT_OP-100][T_MENOR_IGUAL] = 52;
 
     // NT_R y NT_V
     tablaM[NT_R-100][T_ID] = 43; tablaM[NT_R-100][T_NUM] = 43;
     tablaM[NT_V-100][T_ID] = 44; tablaM[NT_V-100][T_NUM] = 45; tablaM[NT_V-100][T_CTE_LIT] = 46;
-
-
-    // NT_C
-    tablaM[NT_C-100][T_ID] = 6;
-    tablaM[NT_C-100][T_IF] = 6;
-    tablaM[NT_C-100][T_WHILE] = 6;
-    tablaM[NT_C-100][T_FOR] = 6;
-    tablaM[NT_C-100][T_INT] = 6;
-    tablaM[NT_C-100][T_FLOAT] = 6;
-    tablaM[NT_C-100][T_CHAR] = 6;
-    tablaM[NT_C-100][T_BOOL] = 6;
-    tablaM[NT_C-100][T_STRING] = 6;
-
-    // Cierres de bloque
-    tablaM[NT_C-100][T_LLAVE_D] = 7;
-
-    // ---> AGREGA ESTA LINEA <---
-    tablaM[NT_C-100][T_PESOS] = 7;
-
 }
 
 void Sintactico::ejecutar(char asTokens[500][100], int k) {
     int ip = 0;
-    //miPila.pop();
+    while(!miPila.isEmpty()) miPila.pop();
+
     miPila.push("$");
     miPila.push("C");
 
@@ -307,15 +247,7 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         std::string X_str = miPila.top();
         std::string a_str = asTokens[ip];
 
-        // int idX = -1;
-        // if(X_str == "S") idX = NT_S;
-        // else if(X_str == "D") idX = NT_D;
-        // else if(X_str == "T") idX = NT_T;
-        // else if(X_str == "C") idX = NT_C;
-        // else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
-
         int idX = -1;
-        // Reemplaza esos "if/else if" por un mapa completo o agrega los que faltan:
         if(X_str == "S") idX = NT_S;
         else if(X_str == "B") idX = NT_B;
         else if(X_str == "C") idX = NT_C;
@@ -330,12 +262,12 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         else if(X_str == "K") idX = NT_K;
         else if(X_str == "J") idX = NT_J;
         else if(X_str == "J'") idX = NT_J_PRIMA;
-        else if(X_str == "W") idX = NT_W;   // Reconoce el No Terminal del While
-        else if(X_str == "FR") idX = NT_FR; // Reconoce el No Terminal del For
+        else if(X_str == "W") idX = NT_W;
+        else if(X_str == "FR") idX = NT_FR;
         else if(X_str == "FI") idX = NT_FI;
         else if(X_str == "FC") idX = NT_FC;
         else if(X_str == "FA") idX = NT_FA;
-        else if(X_str == "FA'") idX = NT_FA_PRIMA; // <--- AGREGA ESTA LÍNEA
+        else if(X_str == "FA'") idX = NT_FA_PRIMA;
         else if(X_str == "O") idX = NT_O;
         else if(X_str == "O'") idX = NT_O_PRIMA;
         else if(X_str == "LOP") idX = NT_LOP;
@@ -344,15 +276,18 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         else if(X_str == "Op") idX = NT_OP;
         else if(tokenToEnum.count(X_str)) idX = tokenToEnum[X_str];
 
-
-        // Validación para evitar el truene
         if (idX == -1) {
+            if(X_str == "$" && a_str == "$") {
+                std::cout << "EXITO: Cadena valida." << std::endl;
+                break;
+            }
             std::cout << "ERROR CRITICO: Simbolo en pila desconocido: " << X_str << std::endl;
             break;
         }
+
         int idA = tokenToEnum.count(a_str) ? tokenToEnum[a_str] : T_ERROR;
 
-        if (idX < 100 || idX == T_PESOS) {
+        if (idX < 100) {
             if (X_str == a_str) {
                 miPila.pop();
                 ip++;
@@ -370,8 +305,23 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
                 miPila.pop();
                 Produccion p = gramatica[renglon];
 
+                // >>> AQUI ESTA LA MAGIA QUE IMPRIME LAS PRODUCCIONES <<<
+                std::cout << idToString[p.ladoIzquierdo] << " -> ";
+
+                if (p.ladoDerecho.size() == 1 && p.ladoDerecho[0] == T_EPSILON) {
+                    std::cout << "epsilon";
+                } else {
+                    // Imprimimos el vector al revés para que se lea en orden correcto
+                    for (int i = p.ladoDerecho.size() - 1; i >= 0; i--) {
+                        int sym = p.ladoDerecho[i];
+                        std::cout << idToString[sym] << " ";
+                    }
+                }
+                std::cout << std::endl;
+                // >>> FIN DE LA MAGIA <<<
+
                 for (int simbolo : p.ladoDerecho) {
-                    if (simbolo != T_EPSILON) { // Solo insertamos si no es epsilon
+                    if (simbolo != T_EPSILON) {
                         string s = (simbolo >= 100) ? idToString[simbolo] : idToString[simbolo];
                         miPila.push(s);
                     }
@@ -383,4 +333,3 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         }
     }
 }
-
