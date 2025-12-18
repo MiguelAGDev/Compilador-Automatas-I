@@ -125,23 +125,25 @@ void Sintactico::configurarGramatica() {
     // gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
 
     /* -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- */
-    // 1. FA ahora llama a una regla intermedia para decidir si es "=" o "++"
-    // FA -> id FA' | ++ id | -- id | e
+    // --- FA: Actualización del for ---
+    // FA -> id FA' (Cubre id++ / id-- / id=V)
     gramatica[36] = Produccion(36, NT_FA, {NT_FA_PRIMA, T_ID});
+    // FA -> ++ id (Pre-incremento)
+    gramatica[52] = Produccion(52, NT_FA, {T_ID, T_MAS, T_MAS});
+    // FA -> -- id (Pre-decremento)
+    gramatica[56] = Produccion(56, NT_FA, {T_ID, T_MENOS, T_MENOS});
+    // FA -> epsilon
     gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
-    // FA -> epsilon (Ciclo sin actualización)
-    gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
 
-    // --- FA_PRIMA: Qué sigue después del ID ---
-    // FA' -> = V (Asignación)
-    gramatica[53] = Produccion(53, NT_FA_PRIMA, {NT_V, T_IGUAL});
-
-    // FA' -> ++ (Post-incremento)
-    gramatica[54] = Produccion(54, NT_FA_PRIMA, {T_MAS, T_MAS});
-
+    // --- FA_PRIMA: Qué sigue al ID ---
+    // FA' -> ++
+    gramatica[53] = Produccion(53, NT_FA_PRIMA, {T_MAS, T_MAS});
+    // FA' -> --
+    gramatica[54] = Produccion(54, NT_FA_PRIMA, {T_MENOS, T_MENOS});
+    // FA' -> = V
+    gramatica[51] = Produccion(51, NT_FA_PRIMA, {NT_V, T_IGUAL});
     // FA' -> epsilon
     gramatica[55] = Produccion(55, NT_FA_PRIMA, {T_EPSILON});
-
     // O -> R O' | O' -> LOP R O' | e
     gramatica[38] = Produccion(38, NT_O, {NT_O_PRIMA, NT_R});
     gramatica[39] = Produccion(39, NT_O_PRIMA, {NT_O_PRIMA, NT_R, NT_LOP});
@@ -232,21 +234,17 @@ void Sintactico::configurarGramatica() {
     // Si FC ve un ";", la condición es vacía (Epsilon)
     tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
 
-    // --- TABLA M PARA FA (Actualización) ---
-    // Si FA empieza con ID, usa la regla que pide FA' después
-    tablaM[NT_FA-100][T_ID] = 36;
-    // Si FA empieza con "+", es el pre-incremento (++a)
-    tablaM[NT_FA-100][T_MAS] = 52;
-    // Si FA no tiene nada (ve el paréntesis de cierre), es Epsilon
-    tablaM[NT_FA-100][T_PAR_D] = 37;
+    // --- TABLA M PARA FA ---
+    tablaM[NT_FA-100][T_ID] = 36;      // Si ve 'a' -> regla 36
+    tablaM[NT_FA-100][T_MAS] = 52;     // Si ve '+' -> regla 52 (++a)
+    tablaM[NT_FA-100][T_MENOS] = 56;   // Si ve '-' -> regla 56 (--a)
+    tablaM[NT_FA-100][T_PAR_D] = 37;   // Si ve ')' -> regla 37 (epsilon)
 
-    // --- TABLA M PARA FA_PRIMA (Ayudante de FA) ---
-    // Si después del ID viene "=", es asignación
-    tablaM[NT_FA_PRIMA-100][T_IGUAL] = 53;
-    // Si después del ID viene "+", es post-incremento (a++)
-    tablaM[NT_FA_PRIMA-100][T_MAS] = 54;
-    // Si después del ID se cierra el paréntesis, es Epsilon
-    tablaM[NT_FA_PRIMA-100][T_PAR_D] = 55;
+    // --- TABLA M PARA FA_PRIMA ---
+    tablaM[NT_FA_PRIMA-100][T_MAS] = 53;   // id++
+    tablaM[NT_FA_PRIMA-100][T_MENOS] = 54; // id--
+    tablaM[NT_FA_PRIMA-100][T_IGUAL] = 51; // id=V
+    tablaM[NT_FA_PRIMA-100][T_PAR_D] = 55; // id) -> epsilon
 
 
     // NT_O y NT_O_PRIMA
