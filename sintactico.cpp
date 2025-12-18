@@ -276,6 +276,22 @@ void Sintactico::configurarGramatica() {
     tablaM[NT_V-100][T_ID] = 44; tablaM[NT_V-100][T_NUM] = 45; tablaM[NT_V-100][T_CTE_LIT] = 46;
 
 
+    // NT_C
+    tablaM[NT_C-100][T_ID] = 6;
+    tablaM[NT_C-100][T_IF] = 6;
+    tablaM[NT_C-100][T_WHILE] = 6;
+    tablaM[NT_C-100][T_FOR] = 6;
+    tablaM[NT_C-100][T_INT] = 6;
+    tablaM[NT_C-100][T_FLOAT] = 6;
+    tablaM[NT_C-100][T_CHAR] = 6;
+    tablaM[NT_C-100][T_BOOL] = 6;
+    tablaM[NT_C-100][T_STRING] = 6;
+
+    // Cierres de bloque
+    tablaM[NT_C-100][T_LLAVE_D] = 7;
+
+    // ---> AGREGA ESTA LINEA <---
+    tablaM[NT_C-100][T_PESOS] = 7;
 
 }
 
@@ -283,7 +299,7 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
     int ip = 0;
     //miPila.pop();
     miPila.push("$");
-    miPila.push("S");
+    miPila.push("C");
 
     std::cout << "\n>>> ANALISIS SINTACTICO <<<" << std::endl;
 

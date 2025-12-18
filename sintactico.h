@@ -38,7 +38,7 @@ enum NoTerminales {
     NT_S = 100, NT_B, NT_C, NT_D, NT_T, NT_L, NT_L_PRIMA, NT_I,
     NT_I_PRIMA, NT_A, NT_A_PRIMA, NT_K, NT_J, NT_J_PRIMA,
     NT_W, NT_FR, NT_FI, NT_FC, NT_FA, NT_FA_PRIMA, NT_O, NT_O_PRIMA,
-    NT_LOP, NT_R, NT_V, NT_OP
+    NT_LOP, NT_R, NT_V, NT_OP,
 };
 
 struct Produccion {
