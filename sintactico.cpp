@@ -22,6 +22,8 @@ void Sintactico::inicializarDiccionarios() {
     tokenToEnum["<"] = T_MENOR;       tokenToEnum[">"] = T_MAYOR;
     // tokenToEnum["=>"] = T_MAYOR_IGUAL; tokenToEnum["=<"] = T_MENOR_IGUAL;
     tokenToEnum["=="] = T_IGUAL_IGUAL; tokenToEnum["!="] = T_DIFERENTE;
+    tokenToEnum["+"] = T_MAS;   tokenToEnum["-"] = T_MENOS;
+
 //    tokenToEnum["Real"] = T_REAL;
     tokenToEnum["$"] = T_PESOS;
 
@@ -33,7 +35,8 @@ void Sintactico::inicializarDiccionarios() {
     idToString[NT_A] = "A"; idToString[NT_A_PRIMA] = "A'"; idToString[NT_K] = "K";
     idToString[NT_J] = "J"; idToString[NT_J_PRIMA] = "J'"; idToString[NT_W] = "W";
     idToString[NT_FR] = "FR"; idToString[NT_FI] = "FI"; idToString[NT_FC] = "FC";
-    idToString[NT_FA] = "FA"; idToString[NT_O] = "O"; idToString[NT_O_PRIMA] = "O'";
+    idToString[NT_FA] = "FA"; idToString[NT_FA_PRIMA] = "FA'"; // Si usas FA', en ejecutar() debe ser "FA'"
+    idToString[NT_O] = "O"; idToString[NT_O_PRIMA] = "O'";
     idToString[NT_LOP] = "LOP"; idToString[NT_R] = "R"; idToString[NT_V] = "V";
     idToString[NT_OP] = "Op";
 }
@@ -101,10 +104,14 @@ void Sintactico::configurarGramatica() {
     gramatica[29] = Produccion(29, NT_W, {NT_B, T_PAR_D, NT_O, T_PAR_I, T_WHILE});
 
     // FR -> for ( FI ; FC ; FA ) B
-    gramatica[30] = Produccion(30, NT_FR, {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, T_PUNTO_COMA, NT_FI, T_PAR_I, T_FOR});
+   gramatica[30] = Produccion(30, NT_FR, {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, T_PUNTO_COMA, NT_FI, T_PAR_I, T_FOR});
+    // Antes: {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, T_PUNTO_COMA, NT_FI, T_PAR_I, T_FOR}
+    // Ahora quitamos el primer T_PUNTO_COMA porque FI (D) ya lo entrega:
+    // gramatica[30] = Produccion(30, NT_FR, {NT_B, T_PAR_D, NT_FA, T_PUNTO_COMA, NT_FC, NT_FI, T_PAR_I, T_FOR});
 
-    // FI -> D | id = V | e
-    gramatica[31] = Produccion(31, NT_FI, {NT_D});
+    // FI -> TL | id = V | e
+    // CON ESTE SE COMPIA EL PUNTO Y COMO HACIENDO ESOT for(;;;)- > gramatica[31] = Produccion(31, NT_FI, {NT_D});
+    gramatica[31] = Produccion(31, NT_FI, {NT_L, NT_T});
     gramatica[32] = Produccion(32, NT_FI, {NT_V, T_IGUAL, T_ID});
     gramatica[33] = Produccion(33, NT_FI, {T_EPSILON});
 
@@ -112,9 +119,28 @@ void Sintactico::configurarGramatica() {
     gramatica[34] = Produccion(34, NT_FC, {NT_O});
     gramatica[35] = Produccion(35, NT_FC, {T_EPSILON});
 
-    // FA -> id = V | e
-    gramatica[36] = Produccion(36, NT_FA, {NT_V, T_IGUAL, T_ID});
+    /* -- ANTERIOR -- ANTERIOR -- ANTERIOR -- ANTERIOR -- */
+    // // FA -> id = V | e
+    // gramatica[36] = Produccion(36, NT_FA, {NT_V, T_IGUAL, T_ID});
+    // gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
+
+    /* -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- NUEVO -- */
+    // 1. FA ahora llama a una regla intermedia para decidir si es "=" o "++"
+    // FA -> id FA' | ++ id | -- id | e
+    gramatica[36] = Produccion(36, NT_FA, {NT_FA_PRIMA, T_ID});
     gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
+    // FA -> epsilon (Ciclo sin actualización)
+    gramatica[37] = Produccion(37, NT_FA, {T_EPSILON});
+
+    // --- FA_PRIMA: Qué sigue después del ID ---
+    // FA' -> = V (Asignación)
+    gramatica[53] = Produccion(53, NT_FA_PRIMA, {NT_V, T_IGUAL});
+
+    // FA' -> ++ (Post-incremento)
+    gramatica[54] = Produccion(54, NT_FA_PRIMA, {T_MAS, T_MAS});
+
+    // FA' -> epsilon
+    gramatica[55] = Produccion(55, NT_FA_PRIMA, {T_EPSILON});
 
     // O -> R O' | O' -> LOP R O' | e
     gramatica[38] = Produccion(38, NT_O, {NT_O_PRIMA, NT_R});
@@ -154,6 +180,9 @@ void Sintactico::configurarGramatica() {
     tablaM[NT_S-100][T_IF] = 2;
     tablaM[NT_S-100][T_WHILE] = 3; tablaM[NT_S-100][T_FOR] = 4;
     tablaM[NT_S-100][T_INT] = 1; tablaM[NT_S-100][T_FLOAT] = 1; tablaM[NT_S-100][T_CHAR] = 1;
+    // En la sección de NT_S
+    tablaM[NT_S-100][T_BOOL] = 1;   // Para que bool mande a Declaración
+    tablaM[NT_S-100][T_STRING] = 1; // Para que string mande a Declaración
 
     // NT_B
     tablaM[NT_B-100][T_LLAVE_I] = 5;
@@ -193,8 +222,32 @@ void Sintactico::configurarGramatica() {
 
     // NT_FI, NT_FC, NT_FA
     tablaM[NT_FI-100][T_INT] = 31; tablaM[NT_FI-100][T_ID] = 32; tablaM[NT_FI-100][T_PUNTO_COMA] = 33;
-    tablaM[NT_FC-100][T_ID] = 34; tablaM[NT_FC-100][T_NUM] = 34; tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
-    tablaM[NT_FA-100][T_ID] = 36; tablaM[NT_FA-100][T_PAR_D] = 37;
+    // tablaM[NT_FC-100][T_ID] = 34; tablaM[NT_FC-100][T_NUM] = 34; tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
+    // tablaM[NT_FA-100][T_ID] = 36; tablaM[NT_FA-100][T_PAR_D] = 37;
+
+    // --- TABLA M PARA FC (Condición) ---
+    // Si FC ve un ID o Número, intenta procesar la operación (O)
+    tablaM[NT_FC-100][T_ID] = 34;
+    tablaM[NT_FC-100][T_NUM] = 34;
+    // Si FC ve un ";", la condición es vacía (Epsilon)
+    tablaM[NT_FC-100][T_PUNTO_COMA] = 35;
+
+    // --- TABLA M PARA FA (Actualización) ---
+    // Si FA empieza con ID, usa la regla que pide FA' después
+    tablaM[NT_FA-100][T_ID] = 36;
+    // Si FA empieza con "+", es el pre-incremento (++a)
+    tablaM[NT_FA-100][T_MAS] = 52;
+    // Si FA no tiene nada (ve el paréntesis de cierre), es Epsilon
+    tablaM[NT_FA-100][T_PAR_D] = 37;
+
+    // --- TABLA M PARA FA_PRIMA (Ayudante de FA) ---
+    // Si después del ID viene "=", es asignación
+    tablaM[NT_FA_PRIMA-100][T_IGUAL] = 53;
+    // Si después del ID viene "+", es post-incremento (a++)
+    tablaM[NT_FA_PRIMA-100][T_MAS] = 54;
+    // Si después del ID se cierra el paréntesis, es Epsilon
+    tablaM[NT_FA_PRIMA-100][T_PAR_D] = 55;
+
 
     // NT_O y NT_O_PRIMA
     tablaM[NT_O-100][T_ID] = 38; tablaM[NT_O-100][T_NUM] = 38;
@@ -209,6 +262,9 @@ void Sintactico::configurarGramatica() {
     // NT_R y NT_V
     tablaM[NT_R-100][T_ID] = 43; tablaM[NT_R-100][T_NUM] = 43;
     tablaM[NT_V-100][T_ID] = 44; tablaM[NT_V-100][T_NUM] = 45; tablaM[NT_V-100][T_CTE_LIT] = 46;
+
+
+
 }
 
 void Sintactico::ejecutar(char asTokens[500][100], int k) {
@@ -251,6 +307,7 @@ void Sintactico::ejecutar(char asTokens[500][100], int k) {
         else if(X_str == "FI") idX = NT_FI;
         else if(X_str == "FC") idX = NT_FC;
         else if(X_str == "FA") idX = NT_FA;
+        else if(X_str == "FA'") idX = NT_FA_PRIMA; // <--- AGREGA ESTA LÍNEA
         else if(X_str == "O") idX = NT_O;
         else if(X_str == "O'") idX = NT_O_PRIMA;
         else if(X_str == "LOP") idX = NT_LOP;

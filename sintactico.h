@@ -9,16 +9,27 @@
 #include "pila.h"
 
 using namespace std;
-
+/*
 // --- TERMINALES (Columnas del Excel) ---
 enum Terminales {
     T_ID, T_ASTERISCO, T_COMA, T_PUNTO_COMA, T_PAR_I, T_PAR_D,
     T_CORCH_I, T_CORCH_D, T_LLAVE_I, T_LLAVE_D, T_IF, T_ELSE,
     T_WHILE, T_FOR, T_INT, T_FLOAT, T_CHAR, T_BOOL, T_STRING,
-    T_NUM, T_CTE_LIT, T_IGUAL, T_OR, T_AND, T_MENOR, /*T_MAYOR_IGUAL,/*
-    /*T_MENOR_IGUAL*/ T_MAYOR, T_IGUAL_IGUAL, T_DIFERENTE,
+    T_NUM, T_CTE_LIT, T_IGUAL, T_OR, T_AND, T_MENOR, /*T_MAYOR_IGUAL,
+    T_MENOR_IGUAL T_MAYOR, T_IGUAL_IGUAL, T_DIFERENTE,
     T_PESOS,
     T_EPSILON, // <-- Para reglas vacías
+    T_ERROR
+};
+*/
+
+enum Terminales {
+    T_ID, T_ASTERISCO, T_COMA, T_PUNTO_COMA, T_PAR_I, T_PAR_D,
+    T_CORCH_I, T_CORCH_D, T_LLAVE_I, T_LLAVE_D, T_IF, T_ELSE,
+    T_WHILE, T_FOR, T_INT, T_FLOAT, T_CHAR, T_BOOL, T_STRING,
+    T_NUM, T_CTE_LIT, T_IGUAL, T_OR, T_AND, T_MENOR, T_MAYOR,
+    T_IGUAL_IGUAL, T_DIFERENTE, T_PESOS, T_EPSILON,
+    T_MAS, T_MENOS, // <--- AGREGA ESTOS DOS
     T_ERROR
 };
 
@@ -26,7 +37,7 @@ enum Terminales {
 enum NoTerminales {
     NT_S = 100, NT_B, NT_C, NT_D, NT_T, NT_L, NT_L_PRIMA, NT_I,
     NT_I_PRIMA, NT_A, NT_A_PRIMA, NT_K, NT_J, NT_J_PRIMA,
-    NT_W, NT_FR, NT_FI, NT_FC, NT_FA, NT_O, NT_O_PRIMA,
+    NT_W, NT_FR, NT_FI, NT_FC, NT_FA, NT_FA_PRIMA, NT_O, NT_O_PRIMA,
     NT_LOP, NT_R, NT_V, NT_OP
 };
 
