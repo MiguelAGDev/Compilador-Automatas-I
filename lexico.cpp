@@ -14,22 +14,23 @@ void Lexico::initialize() {
 
 void Lexico::onFailure() {
     switch (estadoActual) {
-    case 0:  estadoActual = 3;  i = startToken; break; // Grupo IDs
-    case 3:  estadoActual = 6;  i = startToken; break; // Grupo Números
-    case 6:  estadoActual = 11; i = startToken; break; // Grupo '=' (Asignación/Relacional)
-    case 11: estadoActual = 15; i = startToken; break; // Grupo '!' (Diferente/Not)
-    case 15: estadoActual = 19; i = startToken; break; // Grupo '>' (Mayor/Igual)
-    case 19: estadoActual = 23; i = startToken; break; // Grupo '<' (Menor/Igual)
-    case 23: estadoActual = 40; i = startToken; break; // Grupo '&&' (Lógico)
-    case 40: estadoActual = 42; i = startToken; break; // Grupo '||' (Lógico)
-    case 42: estadoActual = 27; i = startToken; break; // Grupo '+'
-    case 27: estadoActual = 29; i = startToken; break; // Grupo '-'
-    case 29: estadoActual = 31; i = startToken; break; // Grupo '*'
-    case 31: estadoActual = 33; i = startToken; break; // Grupo '/'
-    case 33: estadoActual = 34; i = startToken; break; // Grupo ';'
-    case 34: estadoActual = 44; i = startToken; break; // Grupo Otros (Agrupadores/Comas)
+    case 0:  estadoActual = 3;  i = startToken; break; // Probar IDs
+    case 3:  estadoActual = 6;  i = startToken; break; // Probar Números
+    case 6:  estadoActual = 11; i = startToken; break; // Probar '='
+    case 11: estadoActual = 15; i = startToken; break; // Probar '!'
+    case 15: estadoActual = 19; i = startToken; break; // Probar '>'
+    case 19: estadoActual = 23; i = startToken; break; // Probar '<'
+    case 23: estadoActual = 25; i = startToken; break; // Probar '"' (Cadenas)
+    case 25: estadoActual = 40; i = startToken; break; // Probar '&&'
+    case 40: estadoActual = 42; i = startToken; break; // Probar '||'
+    case 42: estadoActual = 27; i = startToken; break; // Probar '+'
+    case 27: estadoActual = 29; i = startToken; break; // Probar '-'
+    case 29: estadoActual = 31; i = startToken; break; // Probar '*'
+    case 31: estadoActual = 33; i = startToken; break; // Probar '/'
+    case 33: estadoActual = 34; i = startToken; break; // Probar ';'
+    case 34: estadoActual = 44; i = startToken; break; // Probar Agrupadores
     default:
-        i = startToken + 1; // Error o desconocido, saltar char
+        i = startToken + 1;
         initialize();
         startToken = i;
         break;
@@ -61,6 +62,7 @@ void Lexico::scanner(const char cadena[255]) {
             else if (caracter == '!') { estadoActual = 15; i++; }
             else if (caracter == '>') { estadoActual = 19; i++; }
             else if (caracter == '<') { estadoActual = 23; i++; }
+            else if (caracter == '"') { estadoActual = 25; i++; } // ESTADO PARA CADENAS
             else if (caracter == '&') { estadoActual = 40; i++; }
             else if (caracter == '|') { estadoActual = 42; i++; }
             else if (caracter == '+') { estadoActual = 27; i++; }
@@ -72,34 +74,27 @@ void Lexico::scanner(const char cadena[255]) {
             else onFailure();
             break;
 
-        /* DELIMITADORES */
-        case 1:
+        case 1: // DELIMITADORES
             if (isDelimiter(caracter)) i++;
-            else {
-                initialize();
-                startToken = i;
-            }
+            else { initialize(); startToken = i; }
             break;
 
-        /* IDENTIFICADORES Y RESERVADAS */
-        case 3:
+        case 3: // ID / RESERVADAS
         case 4:
             if (isLetter(caracter) || isDigit(caracter) || caracter == '_') {
                 estadoActual = 4; i++;
             } else {
-                string lex(buffer + startToken, buffer + i);
+                std::string lex(buffer + startToken, buffer + i);
                 if (lex == "int" || lex == "float" || lex == "char" || lex == "bool" ||
                     lex == "string" || lex == "if" || lex == "else" || lex == "while" || lex == "for")
                     strcpy(asTokens[k++], lex.c_str());
                 else
                     strcpy(asTokens[k++], "id");
-
                 initialize(); startToken = i;
             }
             break;
 
-        /* NUMEROS (Enteros y Reales) */
-        case 6:
+        case 6: // NUMEROS
         case 7:
             if (isDigit(caracter)) { estadoActual = 7; i++; }
             else if (caracter == '.') { estadoActual = 9; i++; }
@@ -109,67 +104,72 @@ void Lexico::scanner(const char cadena[255]) {
             }
             break;
 
-        case 9:
+        case 9: // DECIMALES
             if (isDigit(caracter)) {
+                i++;
                 while (i < (int)len && isDigit(buffer[i])) i++;
                 strcpy(asTokens[k++], "Real");
                 initialize(); startToken = i;
             } else onFailure();
             break;
 
-        /* GRUPO '=': Asignación, == o => */
-        case 11:
+        case 11: // ASIGNACION / IGUALDAD / FLECHA
             if (caracter == '=') { i++; strcpy(asTokens[k++], "=="); }
             else if (caracter == '>') { i++; strcpy(asTokens[k++], "=>"); }
             else { strcpy(asTokens[k++], "="); }
             initialize(); startToken = i;
             break;
 
-        /* GRUPO '!': != */
-        case 15:
+        case 15: // DIFERENTE
             if (caracter == '=') { i++; strcpy(asTokens[k++], "!="); }
             else onFailure();
             initialize(); startToken = i;
             break;
 
-        /* GRUPO '>': > o => (Ya cubierto en 11, pero por si acaso) */
-        case 19:
+        case 19: // MAYOR O IGUAL
             if (caracter == '=') { i++; strcpy(asTokens[k++], "=>"); }
             else { strcpy(asTokens[k++], ">"); }
             initialize(); startToken = i;
             break;
 
-        /* GRUPO '<': < o =< */
-        case 23:
+        case 23: // MENOR O IGUAL
             if (caracter == '=') { i++; strcpy(asTokens[k++], "=<"); }
             else { strcpy(asTokens[k++], "<"); }
             initialize(); startToken = i;
             break;
 
-        /* LOGICOS: && y || */
-        case 40:
+        case 25: // INICIO CADENA
+            if (caracter == '"') { estadoActual = 26; i++; }
+            else if (caracter == '\0') onFailure();
+            else i++;
+            break;
+
+        case 26: // FIN CADENA
+            strcpy(asTokens[k++], "Cte.Lit");
+            initialize(); startToken = i;
+            break;
+
+        case 40: // AND
             if (caracter == '&') { i++; strcpy(asTokens[k++], "&&"); }
             else onFailure();
             initialize(); startToken = i;
             break;
 
-        case 42:
+        case 42: // OR
             if (caracter == '|') { i++; strcpy(asTokens[k++], "||"); }
             else onFailure();
             initialize(); startToken = i;
             break;
 
-        /* ARITMETICOS Y SIMBOLOS */
         case 27: strcpy(asTokens[k++], "+"); initialize(); startToken = i; break;
         case 29: strcpy(asTokens[k++], "-"); initialize(); startToken = i; break;
         case 31: strcpy(asTokens[k++], "*"); initialize(); startToken = i; break;
         case 33: strcpy(asTokens[k++], "/"); initialize(); startToken = i; break;
         case 34: strcpy(asTokens[k++], ";"); initialize(); startToken = i; break;
 
-        /* OTROS (Agrupadores y comas) */
-        case 44: {
-            string s(1, buffer[startToken]);
-            strcpy(asTokens[k++], s.c_str());
+        case 44: { // AGRUPADORES
+            char s[2] = {buffer[startToken], '\0'};
+            strcpy(asTokens[k++], s);
             initialize(); startToken = i;
             break;
         }
